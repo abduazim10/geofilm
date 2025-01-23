@@ -28,7 +28,10 @@ async def on_startup(dp):
 @dp.message_handler(commands=['start'])
 async def subscribe_not(message: types.Message):
     user_id = message.from_user.id
-
+    if is_user_registered(user_id):
+        pass
+    else:
+        register_user(user_id, message.from_user.username or "Неизвестно")
     # Получаем информацию о каналах
     channel_info = get_channel_info()
     if not channel_info:
@@ -54,15 +57,8 @@ async def subscribe_not(message: types.Message):
     if check_is_admin(user_id):
         await message.answer("Добро пожаловать, администратор!", reply_markup=admin_start_keyboards)
     elif all_subscribed:
-        if is_user_registered(user_id):
-            await message.answer(
+        await message.answer(
                 text=f"👋 Здравствуйте, {message.from_user.full_name}!\nДобро пожаловать в Geofilm🎥",
-                reply_markup=user_start_keyboards
-            )
-        else:
-            register_user(user_id, message.from_user.username or "Неизвестно")
-            await message.answer(
-                text=f"👋 Здравствуйте, {message.from_user.full_name}!\nВы зарегистрированы в Geofilm🎥",
                 reply_markup=user_start_keyboards
             )
     else:
@@ -105,20 +101,14 @@ async def process_callback_check(callback_query: types.CallbackQuery):
     # Проверяем, является ли пользователь администратором
     if check_is_admin(callback_query.from_user.id):
         await callback_query.message.answer(
-            'Admin akkauntga xush kelbsiz', 
+            'Добро пожаловать, администратор!', 
             reply_markup=admin_start_keyboards
         )
     elif all_subscribed:
         # Проверяем, зарегистрирован ли пользователь
-        if is_user_registered(user_id):
-            await callback_query.message.answer(
-                text=f"👋 Здравствуйте {callback_query.from_user.full_name}\nДобро пожаловать в наш бот Geofilm🎥", reply_markup=user_start_keyboards
-            )
-        else:
-            register_user(user_id, username)
-            await callback_query.message.answer(
-                text=f"👋 Здравствуйте {callback_query.from_user.full_name}\nДобро пожаловать в наш бот Geofilm🎥", reply_markup=user_start_keyboards
-            )
+        await callback_query.message.answer(
+            text=f"👋 Здравствуйте {callback_query.from_user.full_name}\nДобро пожаловать в наш бот Geofilm🎥", reply_markup=user_start_keyboards
+        )
     else:
         # Если не подписан на все каналы
         await callback_query.message.answer(
@@ -127,16 +117,16 @@ async def process_callback_check(callback_query: types.CallbackQuery):
         )
 
 
-@dp.message_handler(lambda message: message.text == 'Kanal ✏️/➕')
+@dp.message_handler(lambda message: message.text == 'Канал ✏️/➕')
 async def add_kino(message: types.Message):
     if check_is_admin(message.from_user.id):
-        await message.answer("Kanal idsini kiriting:")
+        await message.answer("Введите ID канала:")
         await kanaladd.channel_id.set()
 
 @dp.message_handler(state=kanaladd.channel_id)
 async def save_category(message: types.Message, state):
     await state.update_data(channel_id=message.text)
-    await message.answer('Kanal urlni kiriting:')
+    await message.answer('Введите URL ссылку канала:')
     await kanaladd.next()
 
 @dp.message_handler(state=kanaladd.channel_url)
@@ -145,12 +135,12 @@ async def save_rating(message: types.Message, state: FSMContext):
     user_data = await state.get_data()
     add_channel(channel_id=user_data["channel_id"], url=user_data["channel_url"])
     await state.finish()
-    await message.answer("Kanal qoshildi!", reply_markup=admin_start_keyboards)
+    await message.answer("Канал добавлен!", reply_markup=admin_start_keyboards)
 
-@dp.message_handler(lambda message: message.text =='Kanal ochirish ❌')
+@dp.message_handler(lambda message: message.text =='Удалить канал ❌')
 async def delete_kino(message: types.Message):
     if check_is_admin(message.from_user.id):
-        await message.answer("Kanalni id sini yuboring!")
+        await message.answer("Введите ID канала:")
         await deletekino.id.set()
 
 @dp.message_handler(state=deletekino.id)
@@ -158,27 +148,27 @@ async def save_category(message: types.Message, state):
     channel_id = message.text
     await state.update_data(id = message.text)
     del_channel(id=channel_id)
-    await message.answer("kanal ochirildi!")
+    await message.answer("Канал удален!")
     user_data = await state.get_data()
     await state.finish()
     
 
-@dp.message_handler(lambda message: message.text == 'Kino ✏️/➕')
+@dp.message_handler(lambda message: message.text == 'Кино ✏️/➕')
 async def add_kino(message: types.Message):
     if check_is_admin(message.from_user.id):
-        await message.answer("Kino nomini kiriting:")
+        await message.answer("Введите название фильма:")
         await kinostate.name.set()
 
 @dp.message_handler(state=kinostate.name)
 async def save_category(message: types.Message, state):
     await state.update_data(name=message.text)
-    await message.answer('Kino janrini kiriting:')
+    await message.answer('Введите жанр фильма:')
     await kinostate.next()
 
 @dp.message_handler(state=kinostate.janr)
 async def save_category(message: types.Message, state):
     await state.update_data(janr = message.text)
-    await message.answer('Kino categorysini kiriting:' , reply_markup=kino_keyboards())
+    await message.answer('Введите жанр фильма:' , reply_markup=kino_keyboards())
     await kinostate.next()
 
 @dp.message_handler(state=kinostate.category)
@@ -186,30 +176,30 @@ async def save_category(message: types.Message, state: FSMContext):
     c_id = get_c_id_by_name(message.text)
     if c_id:
         await state.update_data(category=c_id)
-        await message.answer("Film chiqarilgan yilni kiriting:")
+        await message.answer("Введите год выпуска фильма:")
         await kinostate.next()
     else:
-        await message.answer("Kategoriya topilmadi!")
+        await message.answer("Категория не найдена. Попробуйте еще раз!")
 
 @dp.message_handler(state=kinostate.yil)
 async def save_year(message: types.Message, state: FSMContext):
     if not message.text.isdigit():
-        await message.reply("Yilni to'g'ri kiriting (raqam bo'lishi kerak).")
+        await message.reply("Пожалуйста, введите год в виде числа.")
         return
     await state.update_data(yil=int(message.text))
-    await message.answer("Filmning yosh chegarasini kiriting (masalan, 16+):")
+    await message.answer("Введите возрастной рейтинг фильма:")
     await kinostate.next()
 
 @dp.message_handler(state=kinostate.age)
 async def save_age(message: types.Message, state: FSMContext):
     await state.update_data(age=message.text)
-    await message.answer("Filmning reytingini kiriting (masalan, 8.5):")
+    await message.answer("Введите рейтинг фильма:")
     await kinostate.next()
 
 @dp.message_handler(state=kinostate.rating)
 async def save_rating(message: types.Message, state: FSMContext):
     await state.update_data(rating=message.text)
-    await message.answer("Filmni yuklang (video):")
+    await message.answer("Отправьте видеофайл фильма:")
     await kinostate.next()
 
 @dp.message_handler(content_types=ContentType.VIDEO, state=kinostate.video)
@@ -221,7 +211,7 @@ async def save_video(message: Message, state: FSMContext):
         user_data['yil'], user_data['age'], user_data['rating']
     )
     await state.finish()
-    await message.answer("Film muvaffaqiyatli qo'shildi!", reply_markup=admin_start_keyboards)
+    await message.answer("Фильм успешно добавлен!", reply_markup=admin_start_keyboards)
 
 @dp.message_handler(lambda message: message.text == '🔍Искать фильм по Коду')
 async def search_kino_by_code(message: types.Message):
@@ -299,27 +289,27 @@ async def save_category(message: types.Message, state):
         await message.answer("Фильм не найден!")
     await state.finish()
 
-@dp.message_handler(Text('Userlarga jonatish'))
+@dp.message_handler(Text('Рассылка Сообщений'))
 async def start_broadcast(message: types.Message):
     if check_is_admin(message.from_user.id):
-        await message.answer("Nechta odamga yuborishni xohlaysiz?")
+        await message.answer("Сколько человек должны получать сообщений?")
         await BroadcastState.number.set()
 
 
 @dp.message_handler(state=BroadcastState.number)
 async def ask_text(message: types.Message, state: FSMContext):
     if not message.text.isdigit():
-        await message.reply("Faqat raqam kiriting!")
+        await message.reply("Пожалуйста, введите число.")
         return
     await state.update_data(number=int(message.text))
-    await message.answer("Yuboriladigan matnni yuboring:")
+    await message.answer("Текст сообщения:")
     await BroadcastState.text.set()
 
 
 @dp.message_handler(state=BroadcastState.text)
 async def ask_image(message: types.Message, state: FSMContext):
     await state.update_data(text=message.text)
-    await message.answer("Rasmni yuboring yoki yubormasangiz, 'Yo'q' deb yozing.")
+    await message.answer("Изображение (если нет отправьте НЕТ):")
     await BroadcastState.image.set()
 
 @dp.message_handler(state=BroadcastState.image, content_types=types.ContentType.ANY)
@@ -343,14 +333,14 @@ async def send_to_users(message: types.Message, state: FSMContext):
         except Exception:
             continue  # Agar user bloklagan bo'lsa, xatolikni o'tkazib yuboradi.
 
-    await message.answer(f"{count} ta foydalanuvchiga muvaffaqiyatli yuborildi!")
+    await message.answer(f"{count}-Столько человек получили ваш сообщения!")
     await state.finish()
 
 
-@dp.message_handler(lambda message: message.text =='Kino ochirish ❌')
+@dp.message_handler(lambda message: message.text =='Удалить Кино ❌')
 async def delete_kino(message: types.Message):
     if check_is_admin(message.from_user.id):
-        await message.answer("Kinoni ochirish uchun kino kodini kiriting!")
+        await message.answer("Введите ID фильма:")
         await deletekino.id.set()
 
 @dp.message_handler(state=deletekino.id)
@@ -360,7 +350,7 @@ async def save_category(message: types.Message, state):
     # Kino mavjudligini tekshirish
     kino = search_kino_by_id(kino_id)
     if not kino:
-        await message.answer("Bunday IDga ega kino topilmadi. Qayta tekshiring!")
+        await message.answer("кино не найдено. Попробуйте еще раз!")
         await state.finish()
         return
 
@@ -370,9 +360,9 @@ async def save_category(message: types.Message, state):
     # Tasdiqlash
     kino_check = search_kino_by_id(kino_id)
     if not kino_check:
-        await message.answer(f"Kino (ID: {kino_id}) muvaffaqiyatli o'chirildi!")
+        await message.answer(f"Kino (ID: {kino_id}) удален!")
     else:
-        await message.answer(f"Kino (ID: {kino_id}) o'chirib bo'lmadi. Qayta urinib ko'ring!")
+        await message.answer(f"Kino (ID: {kino_id}) не удален. Попробуйте еще раз!")
 
     await state.finish()
 

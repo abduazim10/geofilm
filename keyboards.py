@@ -33,9 +33,9 @@ def get_subscription_keyboard():
 admin_start_keyboards = ReplyKeyboardMarkup(resize_keyboard=True, 
     keyboard=[
         [KeyboardButton('🔍Искать фильм по Коду')],
-        [KeyboardButton('Kino ✏️/➕'), KeyboardButton('Kino ochirish ❌')],
-        [KeyboardButton('Kanal ✏️/➕'), KeyboardButton('Kanal ochirish ❌')],
-        [KeyboardButton('Userlarga jonatish')]
+        [KeyboardButton('Кино ✏️/➕'), KeyboardButton('Удалить Кино ❌')],
+        [KeyboardButton('Канал ✏️/➕'), KeyboardButton('Удалить канал ❌')],
+        [KeyboardButton('Рассылка Сообщений')]
 ])
 user_start_keyboards = ReplyKeyboardMarkup(resize_keyboard=True, 
     keyboard=[
